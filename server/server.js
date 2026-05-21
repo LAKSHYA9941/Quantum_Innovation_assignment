@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -5,9 +9,15 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+
+
+import authRoutes from './routes/authroutes.js';
 
 const app = express();
+app.set('trust proxy', 1);
+
 
 //helmet-sets secure HTTP headers
 app.use(
@@ -15,6 +25,9 @@ app.use(
         crossOriginResourcePolicy: { policy: 'cross-origin' },
     })
 );
+
+app.use(xss());
+app.use(hpp());
 
 //only allow the React dev server (and production URL)
 const allowedOrigins = [
@@ -57,7 +70,7 @@ const authLimiter = rateLimit({
     skipSuccessfulRequests: true, // don't count successful logins
 });
 
-app.use(globalLimiter);
+app.use('/api', globalLimiter);
 
 // Request Parsing
 app.use(express.json({ limit: '10kb' })); // limit body size
@@ -71,6 +84,11 @@ if (process.env.NODE_ENV !== 'production') {
     app.use(morgan('dev'));
 }
 
+// ROUTES
+
+//Auth route
+app.use('/api/auth', authLimiter, authRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -82,19 +100,22 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-app.get('/', (req, res)=>{
+app.get('/', (req, res) => {
     res.send('Welcome to the Quantum Auth API');
 })
 
 
 // 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
+app.all('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Route ${req.originalUrl} not found`
+    });
 });
 
 
 //Global Error Handler
-app.use((err, req, res, next) => {
+app.use('/api', (err, req, res, next) => {
     console.error('Unhandled error:', err);
 
     if (err.message && err.message.startsWith('CORS')) {
