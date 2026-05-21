@@ -1,8 +1,15 @@
 import express from 'express';
+
 const router = express.Router();
 
-import { register, login, getMe } from '../controllers/authController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import {
+  register,
+  login,
+  getMe
+} from '../controllers/authController.js';
+
+import { protect }
+from '../middleware/authMiddleware.js';
 
 
 // POST /api/auth/register
@@ -11,7 +18,8 @@ router.post('/register', register);
 // POST /api/auth/login
 router.post('/login', login);
 
-// GET  /api/auth/me  (protected)
+// GET /api/auth/me
 router.get('/me', protect, getMe);
 
-module.exports = router;
+
+export default router;

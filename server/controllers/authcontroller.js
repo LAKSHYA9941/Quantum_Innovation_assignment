@@ -29,7 +29,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
-exports.register = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const { name, dateOfBirth, email, password } = req.body;
 
@@ -59,7 +59,7 @@ exports.register = async (req, res, next) => {
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-exports.login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -90,7 +90,7 @@ exports.login = async (req, res, next) => {
 // @route   GET /api/auth/me
 // @desc    Get current logged-in user (protected route example)
 // @access  Private
-exports.getMe = async (req, res, next) => {
+export const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
