@@ -1,41 +1,57 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, Calendar, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Calendar, UserPlus, AlertCircle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const formRef = useRef(null);
 
-  const [form, setForm] = useState({ name: '', dateOfBirth: '', email: '', password: '' });
+  const [form, setForm]        = useState({ name: '', dateOfBirth: '', email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]  = useState(false);
+  const [error, setError]      = useState('');
 
-  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setError('');
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  };
+
+  const shakeForm = () => {
+    const el = formRef.current;
+    if (!el) return;
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+  };
 
   const validate = () => {
-    if (!form.name.trim() || form.name.trim().length < 2) {
-      toast.error('Name must be at least 2 characters'); return false;
-    }
-    if (!form.dateOfBirth) {
-      toast.error('Date of birth is required'); return false;
-    }
-    if (new Date(form.dateOfBirth) >= new Date()) {
-      toast.error('Date of birth must be in the past'); return false;
-    }
-    if (!form.email) {
-      toast.error('Email is required'); return false;
-    }
-    if (!form.password || form.password.length < 6) {
-      toast.error('Password must be at least 6 characters'); return false;
-    }
-    return true;
+    if (!form.name.trim() || form.name.trim().length < 2)
+      return 'Name must be at least 2 characters.';
+    if (!form.dateOfBirth)
+      return 'Date of birth is required.';
+    if (new Date(form.dateOfBirth) >= new Date())
+      return 'Date of birth must be in the past.';
+    if (!form.email)
+      return 'Email address is required.';
+    if (!form.password || form.password.length < 6)
+      return 'Password must be at least 6 characters.';
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    setError('');
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      shakeForm();
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await register(form);
@@ -43,29 +59,30 @@ export default function RegisterPage() {
       navigate('/dashboard');
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Please try again.';
-      toast.error(msg);
+      setError(msg);
+      shakeForm();
     } finally {
       setLoading(false);
     }
   };
 
-  // Password strength
   const strength = (() => {
     const p = form.password;
     if (!p) return null;
     let s = 0;
-    if (p.length >= 6) s++;
-    if (p.length >= 10) s++;
-    if (/[A-Z]/.test(p)) s++;
-    if (/[0-9]/.test(p)) s++;
+    if (p.length >= 6)          s++;
+    if (p.length >= 10)         s++;
+    if (/[A-Z]/.test(p))        s++;
+    if (/[0-9]/.test(p))        s++;
     if (/[^A-Za-z0-9]/.test(p)) s++;
     return s;
   })();
 
-  const strengthLabel = strength === null ? null :
-    strength <= 1 ? { label: 'Weak', color: '#ef4444' } :
-    strength <= 3 ? { label: 'Medium', color: '#f59e0b' } :
-    { label: 'Strong', color: '#10b981' };
+  const strengthLabel =
+    strength === null ? null :
+    strength <= 1     ? { label: 'Weak',   color: '#ef4444' } :
+    strength <= 3     ? { label: 'Medium', color: '#f59e0b' } :
+                        { label: 'Strong', color: '#10b981' };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative" style={{ background: 'var(--bg-primary)' }}>
@@ -79,20 +96,27 @@ export default function RegisterPage() {
           </h1>
         </div>
 
-        <div className="rounded-2xl p-8 card-glow fade-up fade-up-1" style={{ background: 'var(--bg-card)' }}>
+        {/* Card */}
+        <div ref={formRef} className="rounded-2xl p-8 card-glow fade-up fade-up-1" style={{ background: 'var(--bg-card)' }}>
+
           {/* Tabs */}
           <div className="flex mb-8 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
             <Link to="/login" className="pb-3 px-4 text-sm font-semibold transition-colors"
-              style={{ color: 'var(--text-muted)', fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>
-              SIGN IN
-            </Link>
+              style={{ color: 'var(--text-muted)', fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>SIGN IN</Link>
             <span className="pb-3 px-4 text-sm font-semibold tab-active cursor-default"
-              style={{ fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>
-              REGISTER
-            </span>
+              style={{ fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>REGISTER</span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+
+            {/* Inline error banner */}
+            {error && (
+              <div className="error-banner">
+                <AlertCircle size={15} style={{ color: '#f87171', flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* Name */}
             <div className="fade-up fade-up-2">
               <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
@@ -175,11 +199,10 @@ export default function RegisterPage() {
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {/* Password strength bar */}
               {strengthLabel && (
                 <div className="mt-2">
                   <div className="flex gap-1 mb-1">
-                    {[1,2,3,4,5].map((i) => (
+                    {[1, 2, 3, 4, 5].map((i) => (
                       <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
                         style={{ background: i <= strength ? strengthLabel.color : 'var(--border-subtle)' }} />
                     ))}

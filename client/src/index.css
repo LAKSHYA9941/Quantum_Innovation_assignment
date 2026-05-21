@@ -2,7 +2,6 @@
 
 @import "tailwindcss";
 
-
 :root {
   --bg-primary: #060b14;
   --bg-card: #0d1526;
@@ -25,6 +24,8 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+
 
 .card-glow {
   box-shadow: 0 0 0 1px var(--border-subtle), 0 4px 24px rgba(0,0,0,0.4), 0 0 60px rgba(0,229,255,0.04);
@@ -85,4 +86,29 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.2); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.4); }
+
+/* Shake animation for form errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-6px); }
+  30%       { transform: translateX(6px); }
+  45%       { transform: translateX(-4px); }
+  60%       { transform: translateX(4px); }
+  75%       { transform: translateX(-2px); }
+  90%       { transform: translateX(2px); }
+}
+.shake { animation: shake 0.45s ease both; }
+
+/* Inline error banner */
+.error-banner {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeUp 0.25s ease both;
+}

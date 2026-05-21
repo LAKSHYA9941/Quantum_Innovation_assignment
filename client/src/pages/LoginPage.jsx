@@ -1,25 +1,42 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const formRef = useRef(null);
 
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm]        = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]  = useState(false);
+  const [error, setError]      = useState('');
 
-  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setError('');
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  };
+
+  const shakeForm = () => {
+    const el = formRef.current;
+    if (!el) return;
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (!form.email || !form.password) {
-      toast.error('Please fill in all fields');
+      setError('Please fill in both email and password.');
+      shakeForm();
       return;
     }
+
     setLoading(true);
     try {
       const data = await login(form);
@@ -27,7 +44,8 @@ export default function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
-      toast.error(msg);
+      setError(msg);
+      shakeForm();
     } finally {
       setLoading(false);
     }
@@ -38,7 +56,7 @@ export default function LoginPage() {
       <div className="grid-bg" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo / Brand */}
+        {/* Brand */}
         <div className="text-center mb-8 fade-up">
           <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif', color: 'var(--text-primary)' }}>
             Welcome Back
@@ -46,20 +64,26 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl p-8 card-glow fade-up fade-up-1" style={{ background: 'var(--bg-card)' }}>
+        <div ref={formRef} className="rounded-2xl p-8 card-glow fade-up fade-up-1" style={{ background: 'var(--bg-card)' }}>
+
           {/* Tabs */}
           <div className="flex mb-8 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
             <span className="pb-3 px-4 text-sm font-semibold tab-active cursor-default"
-              style={{ fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>
-              SIGN IN
-            </span>
+              style={{ fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>SIGN IN</span>
             <Link to="/register" className="pb-3 px-4 text-sm font-semibold transition-colors"
-              style={{ color: 'var(--text-muted)', fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>
-              REGISTER
-            </Link>
+              style={{ color: 'var(--text-muted)', fontFamily: 'Syne, sans-serif', letterSpacing: '0.05em' }}>REGISTER</Link>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+
+            {/* Inline error banner */}
+            {error && (
+              <div className="error-banner">
+                <AlertCircle size={15} style={{ color: '#f87171', flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* Email */}
             <div className="fade-up fade-up-2">
               <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
@@ -75,6 +99,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   autoComplete="email"
                   className="auth-input w-full pl-10 pr-4 py-3 rounded-xl text-sm"
+                  style={error && !form.email ? { borderColor: 'rgba(239,68,68,0.5)' } : {}}
                 />
               </div>
             </div>
@@ -99,6 +124,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   className="auth-input w-full pl-10 pr-10 py-3 rounded-xl text-sm"
+                  style={error && !form.password ? { borderColor: 'rgba(239,68,68,0.5)' } : {}}
                 />
                 <button
                   type="button"
@@ -128,7 +154,6 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* Footer */}
           <p className="text-center mt-6 text-sm fade-up fade-up-5" style={{ color: 'var(--text-muted)' }}>
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold transition-colors hover:underline" style={{ color: 'var(--accent-cyan)' }}>

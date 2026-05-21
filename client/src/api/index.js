@@ -21,15 +21,23 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Auth endpoints that should NEVER trigger a redirect on 401
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register'];
+
 // Global response error handler
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid — clear storage
+    const isAuthEndpoint = AUTH_ENDPOINTS.some((path) =>
+      error.config?.url?.includes(path)
+    );
+
+    // Only redirect on 401 for PROTECTED routes, not login/register
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('quantum_user');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );
